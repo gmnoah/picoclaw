@@ -44,11 +44,23 @@ func FindPicoclawBinary() string {
 	if exe, err := os.Executable(); err == nil {
 		candidate := filepath.Join(filepath.Dir(exe), binaryName)
 		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+			if abs, err := filepath.Abs(candidate); err == nil {
+				return abs
+			}
 			return candidate
 		}
 	}
 
-	return "picoclaw"
+	// Fallback: look up in PATH and return absolute path so exec does not
+	// refuse to run (e.g. on Windows, "cannot run executable found relative to current directory").
+	lookName := "picoclaw"
+	if path, err := exec.LookPath(lookName); err == nil {
+		if abs, err := filepath.Abs(path); err == nil {
+			return abs
+		}
+		return path
+	}
+	return binaryName
 }
 
 // GetLocalIP returns the local IP address of the machine.
